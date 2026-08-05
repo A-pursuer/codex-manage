@@ -467,7 +467,9 @@ function Sync-CurrentAuth([string]$Reason, [switch]$Quiet) {
 }
 
 function Get-SavedAccounts {
-    $rows = New-Object System.Collections.Generic.List[object]
+    # ::new() 而非 New-Object：见 common.ps1 里 Get-ConsistentValue 的注释，
+    # 避免个别 PowerShell 5.1 运行时下 @() 包裹 New-Object 构造的泛型集合报错。
+    $rows = [System.Collections.Generic.List[object]]::new()
     $metaFiles = @(Get-ChildItem -LiteralPath $script:AccountsDir -Filter '*.meta.json' -File -ErrorAction SilentlyContinue)
     foreach ($file in $metaFiles) {
         try {
@@ -714,7 +716,7 @@ function Show-AccountCurrentStatus {
 }
 
 function Get-AuthBackupRows {
-    $rows = New-Object System.Collections.Generic.List[object]
+    $rows = [System.Collections.Generic.List[object]]::new()
     $files = @(Get-ChildItem -LiteralPath $script:AuthBackupsDir -Filter '*.meta.json' -File -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
     foreach ($file in $files) {
         try {

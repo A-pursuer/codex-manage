@@ -48,7 +48,10 @@ function Get-ConsistentValue {
         [switch]$Required
     )
 
-    $clean = New-Object System.Collections.Generic.List[string]
+    # 注：用 ::new() 而不是 New-Object 构造，避免个别 PowerShell 5.1 运行时下
+    # New-Object 构造出的泛型集合被 @() 包裹时触发 "Argument types do not match"
+    # 的动态绑定器缺陷（已实测复现，::new() 构造不受影响）。
+    $clean = [System.Collections.Generic.List[string]]::new()
     foreach ($value in $Values) {
         $text = Get-StringValue $value
         if ($text) { $clean.Add($text) }
@@ -380,7 +383,7 @@ function ConvertTo-OrderedHashtable($InputObject) {
         return $hash
     }
     if (($InputObject -is [System.Collections.IEnumerable]) -and -not ($InputObject -is [string])) {
-        $list = New-Object System.Collections.Generic.List[object]
+        $list = [System.Collections.Generic.List[object]]::new()
         foreach ($item in $InputObject) { $list.Add((ConvertTo-OrderedHashtable $item)) }
         return , $list
     }
