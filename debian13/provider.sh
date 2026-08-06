@@ -357,7 +357,8 @@ write_deepseek_config() {
 # Mode: DeepSeek V4 Flash
 model = "${model}"
 model_provider = "${DEEPSEEK_PROVIDER_ID}"
-preferred_auth_method = "apikey"
+# 不写 preferred_auth_method：codex-rs 的 ConfigToml 不认识这个字段
+# （deny_unknown_fields，会导致加载失败），forced_login_method 已经够用。
 forced_login_method = "api"
 model_reasoning_effort = "${DEEPSEEK_REASONING_EFFORT}"
 plan_mode_reasoning_effort = "${DEEPSEEK_PLAN_REASONING_EFFORT}"

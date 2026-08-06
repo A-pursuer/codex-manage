@@ -406,7 +406,11 @@ function Write-ProviderConfig([string]$Mode, $Settings) {
         $lines.Add('# Mode: DeepSeek V4 Flash')
         $lines.Add('model = ' + (ConvertTo-TomlString $Settings.Model))
         $lines.Add('model_provider = "deepseek"')
-        $lines.Add('preferred_auth_method = "apikey"')
+        # 不写 preferred_auth_method：这不是 codex-rs ConfigToml 里的真实字段
+        # （该 struct 是 #[schemars(deny_unknown_fields)]，未知字段会导致
+        # config.toml 直接加载失败），实测会报
+        # "unknown configuration field `preferred_auth_method`"。forced_login_method
+        # 已经足够把登录方式限定为 API Key。
         $lines.Add('forced_login_method = "api"')
         $lines.Add('model_reasoning_effort = ' + (ConvertTo-TomlString $Settings.ReasoningEffort))
         $lines.Add('plan_mode_reasoning_effort = ' + (ConvertTo-TomlString $Settings.PlanReasoningEffort))
