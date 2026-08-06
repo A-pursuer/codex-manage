@@ -293,6 +293,12 @@ function Write-Utf8TextAtomic([string]$Path, [string]$Text) {
     Write-BytesAtomic -Path $Path -Bytes $encoding.GetBytes($Text)
 }
 
+# System.Security.Cryptography.ProtectedData（DPAPI）不在 WinPS 5.1 默认加载的
+# 程序集里（不像 SHA256 等类型随 mscorlib 自动可用），全新 powershell.exe 进程下
+# 第一次直接使用会报 "Unable to find type [Security.Cryptography.ProtectedData]"。
+# 这里在模块加载时显式加载一次；重复加载是幂等的，不会报错。
+Add-Type -AssemblyName System.Security
+
 # ==================== DPAPI（entropy 显式传入，避免跨模块共享全局变量互相覆盖）====================
 function Protect-TextForCurrentUser([string]$Text, [byte[]]$Entropy) {
     $plain = [Text.Encoding]::UTF8.GetBytes($Text)

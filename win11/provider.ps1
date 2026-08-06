@@ -275,6 +275,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 try {
+    Add-Type -AssemblyName System.Security
     $entropy = [Text.Encoding]::UTF8.GetBytes('401-codex-cpa-win11-dpapi-v1')
     $cipher = [IO.File]::ReadAllBytes($TokenFile)
     $plain = [Security.Cryptography.ProtectedData]::Unprotect(
