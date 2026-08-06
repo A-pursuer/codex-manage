@@ -358,8 +358,13 @@ write_deepseek_config() {
 model = "${model}"
 model_provider = "${DEEPSEEK_PROVIDER_ID}"
 # 不写 preferred_auth_method：codex-rs 的 ConfigToml 不认识这个字段
-# （deny_unknown_fields，会导致加载失败），forced_login_method 已经够用。
-forced_login_method = "api"
+# （deny_unknown_fields，会导致加载失败）。
+# 也不写 forced_login_method：这个字段管的是 Codex 自己对 ChatGPT/OpenAI
+# 后端用什么方式登录，跟具体请求走哪个 model provider 无关——DeepSeek 的
+# 密钥已经通过下面 auth 段落的 command 机制独立注入，不需要它。实测把它
+# 设成 api 后，只要当前 auth.json 还是 ChatGPT 登录态，Codex 在任何一次
+# 调用（包括本工具校验用的 codex exec）里都会检测到冲突并主动删除
+# auth.json 把用户登出，和本工具"能随时切回官方订阅"的目标直接冲突。
 model_reasoning_effort = "${DEEPSEEK_REASONING_EFFORT}"
 plan_mode_reasoning_effort = "${DEEPSEEK_PLAN_REASONING_EFFORT}"
 model_catalog_json = "${catalog}"

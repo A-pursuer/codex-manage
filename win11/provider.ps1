@@ -409,9 +409,16 @@ function Write-ProviderConfig([string]$Mode, $Settings) {
         # 不写 preferred_auth_method：这不是 codex-rs ConfigToml 里的真实字段
         # （该 struct 是 #[schemars(deny_unknown_fields)]，未知字段会导致
         # config.toml 直接加载失败），实测会报
-        # "unknown configuration field `preferred_auth_method`"。forced_login_method
-        # 已经足够把登录方式限定为 API Key。
-        $lines.Add('forced_login_method = "api"')
+        # "unknown configuration field `preferred_auth_method`"。
+        # 也不写 forced_login_method：这个字段管的是"Codex 自己（对 ChatGPT/
+        # OpenAI 后端）用什么方式登录"，跟具体请求走哪个 model_provider 是
+        # 两回事——DeepSeek 的密钥已经通过下面 [model_providers.deepseek.auth]
+        # 的 command 机制独立注入，根本不需要这个字段。实测把它设成 "api"
+        # 后，只要当前 auth.json 还是 ChatGPT 登录态，Codex 就会在任何一次
+        # 调用（包括本工具自己做校验用的 codex exec）里检测到"要求 API Key
+        # 登录但当前是 ChatGPT 登录"，然后**主动删除 auth.json 把用户登出**——
+        # 这和本工具"CPA/DeepSeek 切换要能随时切回官方订阅"的设计目标直接
+        # 冲突，所以这个字段对我们管理的任何 provider 都不应该写。
         $lines.Add('model_reasoning_effort = ' + (ConvertTo-TomlString $Settings.ReasoningEffort))
         $lines.Add('plan_mode_reasoning_effort = ' + (ConvertTo-TomlString $Settings.PlanReasoningEffort))
         $lines.Add('model_catalog_json = ' + (ConvertTo-TomlString $script:DeepSeekCatalogFile))
