@@ -213,7 +213,12 @@ function Set-RestrictedDirectoryAcl([string]$Path) {
             )
             [void]$acl.AddAccessRule($rule)
         }
-        Set-Acl -LiteralPath $Path -AclObject $acl
+        # 用 DirectoryInfo.SetAccessControl() 而不是 Set-Acl cmdlet：Set-Acl 在
+        # 非管理员账户下经常会报 "does not possess the 'SeSecurityPrivilege'
+        # privilege"（即使根本没碰 SACL/审计规则），这是 Set-Acl cmdlet 自身
+        # 长期存在的已知问题；直接调用 .NET 的 SetAccessControl() 只会持久化
+        # 实际改动过的部分（这里是 Owner + DACL），不需要该特权。
+        [System.IO.DirectoryInfo]::new($Path).SetAccessControl($acl)
     } catch {
         Write-Warn "无法完全收紧目录 ACL：$Path；$($_.Exception.Message)"
     }
@@ -244,7 +249,9 @@ function Set-RestrictedFileAcl([string]$Path, [string]$StateRoot = '') {
                 )
                 [void]$acl.AddAccessRule($rule)
             }
-            Set-Acl -LiteralPath $Path -AclObject $acl
+            # 见 Set-RestrictedDirectoryAcl 里的说明：用 FileInfo.SetAccessControl()
+            # 代替 Set-Acl cmdlet，避免非管理员账户下的 SeSecurityPrivilege 报错。
+            [System.IO.FileInfo]::new($Path).SetAccessControl($acl)
         } else {
             # 保留继承/系统 ACL，只补一条当前用户 FullControl，避免破坏
             # Codex CLI / IDE 扩展 / 桌面端共享的 auth.json、config.toml。
@@ -255,7 +262,7 @@ function Set-RestrictedFileAcl([string]$Path, [string]$StateRoot = '') {
                 [Security.AccessControl.AccessControlType]::Allow
             )
             $acl.SetAccessRule($rule)
-            Set-Acl -LiteralPath $Path -AclObject $acl
+            [System.IO.FileInfo]::new($Path).SetAccessControl($acl)
         }
     } catch {
         Write-Warn "无法确认文件 ACL：$Path；$($_.Exception.Message)"
